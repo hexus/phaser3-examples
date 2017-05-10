@@ -172,7 +172,10 @@ var compositeShader = [
     'uniform sampler2D u_normals;',
     'varying vec2 v_tex_coord;',
     'void main(void) {',
-    '   gl_FragColor = texture2D(u_normals, v_tex_coord);',
+    '   vec4 albedo = texture2D(u_albedo, v_tex_coord);',
+    '   vec4 occlusion = texture2D(u_occlusion, v_tex_coord);',
+    '   vec4 normals = texture2D(u_normals, v_tex_coord);',
+    '   gl_FragColor = albedo;',
     '}'
 ].join('\n');
 
