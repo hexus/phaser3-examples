@@ -1,4 +1,4 @@
-// TODO: Rename to Deferred Disco.js
+// Deferred Disco.js
 var config = {
     type: Phaser.WEBGL,
     width: 800,
@@ -19,12 +19,10 @@ var lights = [];
 var step = 0;
 
 var albedoPass;
-var occlusionPass;
 var normalPass;
 var lightingPass;
 
 var albedoShader;
-var occlusionShader;
 var normalShader;
 var lightingShader;
 
@@ -37,6 +35,7 @@ function preload ()
 {
     this.load.image('diamond', 'assets/sprites/diamond.png');
     this.load.image('phaser-dude', 'assets/sprites/phaser-dude.png');
+    this.load.image('phaser', 'assets/sprites/phaser1.png');
 }
 
 function create ()
@@ -48,10 +47,10 @@ function create ()
     var height = this.sys.height;
     
     // Prepare some images
-    var imageKeys = ['diamond', 'phaser-dude'];
+    var imageKeys = ['diamond', 'phaser-dude', 'phaser'];
     var imageKeyCount = imageKeys.length;
     
-    for (i = 0; i < 500; i++)
+    for (i = 0; i < 100; i++)
     {
         image = this.make.image({
             x: Math.random() * width,
@@ -76,43 +75,42 @@ function create ()
                 r: Math.random(),
                 g: Math.random(),
                 b: Math.random(),
-                a: 0.66
+                a: 1.0
             }
         };
         
         lights.push(light);
     }
-    
+
     // Prepare some render passes
     albedoPass = this.make.renderPass(0, 0, width, height, 'albedo', albedoShader);
-    occlusionPass = this.make.renderPass(0, 0, width, height, 'occlusion', occlusionShader);
     normalPass = this.make.renderPass(0, 0, width, height, 'normals', normalShader);
     lightingPass = this.add.effectLayer(0, 0, width, height, 'lighting', lightingShader);
-    
-    // Prepare the uniforms for each render pass
+
+    // Prepare the consistent uniforms for the lighting pass
     light = lights[0];
 
-    //lightingPass.setFloat3('u_light_position', light.position.x, light.position.y, light.position.z);
-    lightingPass.setFloat4('u_light_color', light.color.r, light.color.g, light.color.b, light.color.a);
+    lightingPass.setFloat2('u_resolution', width, height);
     lightingPass.setFloat4('u_ambient_color', 0.2, 0.2, 0.2, 1.0);
     lightingPass.setFloat4('u_light_falloff', 0.2, 3.0, 1.0, 1.0);
-
     lightingPass.setRenderTextureAt(albedoPass.renderTexture, 'u_albedo', 1);
-    lightingPass.setRenderTextureAt(occlusionPass.renderTexture, 'u_occlusion', 2);
     lightingPass.setRenderTextureAt(normalPass.renderTexture, 'u_normals', 3);
-    //lightingPass.setRenderTextureAt(lightsPass.renderTexture, 'u_lights', 4)
 
     // Use pointer input to control the first light
     game.canvas.onmousemove = function (e) {
+        console.log(e);
         light.position.x = e.clientX - game.canvas.offsetLeft;
         light.position.y = e.clientY - game.canvas.offsetTop;
     };
 
     game.canvas.onmousedown = function (e) {
-        light.color.r = Math.random();
-        light.color.g = Math.random();
-        light.color.b = Math.random();
-        light.position.z = Math.random() * 0.1;
+        for (i = 0; i < lights.length; i++) {
+            light = lights[i];
+            light.color.r = Math.random();
+            light.color.g = Math.random();
+            light.color.b = Math.random();
+            light.position.z = Math.random() * 0.1;
+        }
     };
 }
 
@@ -142,8 +140,8 @@ function update ()
     {
         light = lights[i];
 
-        light.position.x += Math.sin(step + i * 3);
-        light.position.y += Math.cos(step + i * 3);
+        light.position.x += Math.sin(step + i) * 3;
+        light.position.y += Math.cos(step + i) * 3;
 
         lightPositionsOffset = i * 3;
         lightColorsOffset    = i * 4;
@@ -162,17 +160,11 @@ function update ()
     
     // Render each pass
     albedoPass.clearColorBuffer(0, 0, 0, 0);
-    occlusionPass.clearColorBuffer(0, 0, 0, 0);
     normalPass.clearColorBuffer(0, 0, 0, 0);
 
     for (i = 0; i < imageCount; ++i)
     {
         albedoPass.render(images[i], camera);
-    }
-    
-    for (i = 0; i < imageCount; ++i)
-    {
-        occlusionPass.render(images[i], camera);
     }
     
     for (i = 0; i < imageCount; ++i)
@@ -212,15 +204,6 @@ var albedoShader = [
     '}'
 ].join('\n');
 
-var occlusionShader = [
-    'precision mediump float;',
-    'varying vec2 v_tex_coord;',
-    'uniform sampler2D u_albedo;',
-    'void main(void) {',
-    '   gl_FragColor = vec4(texture2D(u_albedo, v_tex_coord).a);',
-    '}'
-].join('\n');
-
 var normalShader = [
     'precision mediump float;',
     'varying vec2 v_tex_coord;',
@@ -236,23 +219,6 @@ var normalShader = [
 // potentially even moreso with instancing and a huge number of lights.
 // The quads could in fact be replaced by geometry of any shape as long as they
 // cover each light's area of influence.
-// var lightShader = [
-//     'precision mediump float;',
-//     'varying vec2 v_tex_coord;',
-//     'uniform sampler2D u_albedo;',
-//     'uniform sampler2D u_occlusion;',
-//     'uniform sampler2D u_normals;',
-//     'uniform float3 u_light_position;',
-//     'uniform float3 u_light_color',
-//     'void main(void) {',
-//     '   vec4 albedo = texture2D(u_albedo, v_tex_coord);',
-//     '   vec4 occlusion = texture2D(u_occlusion, v_tex_coord);',
-//     '   vec4 normals = texture2D(u_normals, v_tex_coord);',
-//     '   vec4 shadow = vec4(0, 0, 0, texture2D(u_occlusion, v_tex_coord * 0.90).a);',
-//     '   gl_FragColor = albedo + shadow;',
-//     '}'
-// ].join('\n');
-
 var lightingShader = [
     'precision mediump float;',
     'const int maxLights = 20;',
@@ -261,12 +227,13 @@ var lightingShader = [
     'varying float v_alpha;',
     'uniform sampler2D u_albedo;',
     'uniform sampler2D u_normals;',
+    'uniform vec2 u_resolution;',
     'uniform vec3 u_light_position[maxLights];',
     'uniform vec4 u_light_color[maxLights];',
     'uniform vec4 u_ambient_color;',
     'uniform vec4 u_light_falloff;',
     'void main () {',
-    '   vec2 uv = vec2(gl_FragCoord.x / 800.0, gl_FragCoord.y / 600.0);',
+    '   vec2 uv = vec2(gl_FragCoord.x / u_resolution.x, gl_FragCoord.y / u_resolution.y);',
     '   vec4 color = texture2D(u_albedo, v_tex_coord);',
     '   vec4 normal_map = texture2D(u_normals, v_tex_coord);',
     '   vec3 ambient = (u_ambient_color.rgb * u_ambient_color.a);',
