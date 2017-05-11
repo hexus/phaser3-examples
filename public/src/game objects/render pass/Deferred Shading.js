@@ -64,7 +64,7 @@ function create ()
     }
     
     // Prepare some lights
-    for (i = 0; i < 20; i++)
+    for (i = 0; i < 10; i++)
     {
         light = {
             position: {
@@ -76,7 +76,7 @@ function create ()
                 r: Math.random(),
                 g: Math.random(),
                 b: Math.random(),
-                a: 1.0
+                a: 0.66
             }
         };
         
@@ -120,6 +120,8 @@ function update ()
 {
     var i;
     var light;
+    var lightPositionsOffset;
+    var lightColorsOffset;
     var camera = this.cameras.main;
     var imageCount = images.length;
     var lightCount = lights.length;
@@ -134,23 +136,26 @@ function update ()
         image.x += Math.cos(step + i);
         image.y += Math.sin(step + i);
     }
-    
-    // Update the light positions and float arrays
+
+    // Update the light positions and uniform arrays
     for (i = 0; i < lightCount; ++i)
     {
         light = lights[i];
-        
-        light.position.x += Math.cos(step + i);
-        light.position.y += Math.sin(step + i);
 
-        lightPositions[i * 3]     = light.position.x;
-        lightPositions[i * 3 + 1] = light.position.y;
-        lightPositions[i * 3 + 2] = light.position.z;
+        light.position.x += Math.sin(step + i * 3);
+        light.position.y += Math.cos(step + i * 3);
 
-        lightColors[i * 4]     = light.color.r;
-        lightColors[i * 4 + 1] = light.color.g;
-        lightColors[i * 4 + 2] = light.color.b;
-        lightColors[i * 4 + 3] = light.color.a;
+        lightPositionsOffset = i * 3;
+        lightColorsOffset    = i * 4;
+
+        lightPositions[lightPositionsOffset]     = light.position.x / width;
+        lightPositions[lightPositionsOffset + 1] = -light.position.y / height + 1;
+        lightPositions[lightPositionsOffset + 2] = light.position.z;
+
+        lightColors[lightColorsOffset]     = light.color.r;
+        lightColors[lightColorsOffset + 1] = light.color.g;
+        lightColors[lightColorsOffset + 3] = light.color.a;
+        lightColors[lightColorsOffset + 2] = light.color.b;
     }
     
     step += 0.01;
@@ -188,10 +193,8 @@ function update ()
 
     // Finally, let's update the uniforms that contain the data for our lights
     light = lights[0];
-    lightingPass.setFloat3('u_light_position', light.position.x / width, -light.position.y / height + 1, light.position.z);
-    lightingPass.setFloat4('u_light_color', light.color.r, light.color.g, light.color.b, light.color.a);
-
-    
+    lightingPass.setFloat3Array('u_light_position', lightPositions);
+    lightingPass.setFloat4Array('u_light_color', lightColors);
 
     // After this, Phaser will take care of rendering the lightingPass for us
     // because it's an effect layer. It will take all the textures we've
@@ -258,29 +261,33 @@ var lightingShader = [
     'varying float v_alpha;',
     'uniform sampler2D u_albedo;',
     'uniform sampler2D u_normals;',
-    'uniform vec3 u_light_position;',
-    'uniform vec4 u_light_color;',
+    'uniform vec3 u_light_position[maxLights];',
+    'uniform vec4 u_light_color[maxLights];',
     'uniform vec4 u_ambient_color;',
     'uniform vec4 u_light_falloff;',
     'void main () {',
     '   vec2 uv = vec2(gl_FragCoord.x / 800.0, gl_FragCoord.y / 600.0);',
     '   vec4 color = texture2D(u_albedo, v_tex_coord);',
     '   vec4 normal_map = texture2D(u_normals, v_tex_coord);',
-    '   vec3 light_dir = vec3(u_light_position.xy - uv, u_light_position.z);',
-    '   float D = length(light_dir);',
-    '   vec3 N = normalize(vec3(normal_map.rgb * 2.0 - 1.0));',
-    '   vec3 L = normalize(light_dir);',
-    '   vec3 diffuse = (u_light_color.rgb * u_light_color.a ) * max(dot(N, L), 0.0);',
     '   vec3 ambient = (u_ambient_color.rgb * u_ambient_color.a);',
-    '   float attenuation = 1.0 / (u_light_falloff.x + (u_light_falloff.y * D) + (u_light_falloff.z * D * D* D * D* D * D* D * D* D * D));',
-    '   vec3 intensity = ambient + diffuse * attenuation;',
-    '   vec3 final_color = color.rgb * intensity;',
+    '   vec3 final_intensity;',
+    '   for (int i = 0; i < maxLights; i++) {',
+    '      vec3 light_dir = vec3(u_light_position[i].xy - uv, u_light_position[i].z);',
+    '      float D = length(light_dir);',
+    '      vec3 N = normalize(vec3(normal_map.rgb * 2.0 - 1.0));',
+    '      vec3 L = normalize(light_dir);',
+    '      vec3 diffuse = (u_light_color[i].rgb * u_light_color[i].a ) * max(dot(N, L), 0.0);',
+    '      float attenuation = 1.0 / (u_light_falloff.x + (u_light_falloff.y * D) + (u_light_falloff.z * D * D* D * D* D * D* D * D* D * D));',
+    '      vec3 intensity = diffuse * attenuation;',
+    '      final_intensity += color.rgb * intensity;',
+    '   }',
+    '   vec3 final_color = ambient * color.rgb + final_intensity;',
     '   gl_FragColor = vec4(final_color, 1.0) * color.a;',
     '}'
 ].join('\n');
 
-// TODO: Let us set samplers and arrays for Effect Layers! :) This was adapted
-//       from the RenderPass source (which also lacks arrays, as improvised).
+// Let us set samplers and arrays for Effect Layers! :) This was adapted
+// from the RenderPass source (which also lacks arrays, as improvised).
 Phaser.GameObjects.EffectLayer.prototype.setRenderTextureAt = function(renderTexture, samplerName, unit)
 {
     var gl = this.dstShader.gl;
@@ -306,8 +313,22 @@ Phaser.GameObjects.EffectLayer.prototype.setFloat1Array = function(uniformName, 
         return;
     }
 
-    gl.useProgram(this.program);
+    gl.useProgram(dstShader.program);
     gl.uniform1fv(this.getUniformLocation(uniformName), value);
+};
+
+Phaser.GameObjects.EffectLayer.prototype.setFloat2Array = function(uniformName, value)
+{
+    var gl = this.dstShader.gl;
+    var dstShader = this.dstShader;
+
+    if (gl === null || dstShader === null)
+    {
+        return;
+    }
+
+    gl.useProgram(dstShader.program);
+    gl.uniform2fv(this.getUniformLocation(uniformName), value);
 };
 
 Phaser.GameObjects.EffectLayer.prototype.setFloat3Array = function (uniformName, value)
@@ -320,7 +341,7 @@ Phaser.GameObjects.EffectLayer.prototype.setFloat3Array = function (uniformName,
         return;
     }
 
-    gl.useProgram(this.program);
+    gl.useProgram(dstShader.program);
     gl.uniform3fv(this.getUniformLocation(uniformName), value);
 };
 
@@ -334,6 +355,6 @@ Phaser.GameObjects.EffectLayer.prototype.setFloat4Array = function (uniformName,
         return;
     }
 
-    gl.useProgram(this.program);
+    gl.useProgram(dstShader.program);
     gl.uniform4fv(this.getUniformLocation(uniformName), value);
 };
