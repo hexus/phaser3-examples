@@ -51,7 +51,7 @@ function create ()
     var imageKeys = ['diamond', 'phaser-dude'];
     var imageKeyCount = imageKeys.length;
     
-    for (i = 0; i < 200; i++)
+    for (i = 0; i < 500; i++)
     {
         image = this.make.image({
             x: Math.random() * width,
@@ -76,7 +76,7 @@ function create ()
                 r: Math.random(),
                 g: Math.random(),
                 b: Math.random(),
-                a: 2.0
+                a: 1.0
             }
         };
         
@@ -104,9 +104,15 @@ function create ()
 
     // Use pointer input to control the first light
     game.canvas.onmousemove = function (e) {
-        console.log('hihi');
         light.position.x = e.clientX - game.canvas.offsetLeft;
         light.position.y = e.clientY - game.canvas.offsetTop;
+    };
+
+    game.canvas.onmousedown = function (e) {
+        light.color.r = Math.random();
+        light.color.g = Math.random();
+        light.color.b = Math.random();
+        light.position.z = Math.random() * 0.1;
     };
 }
 
@@ -129,13 +135,22 @@ function update ()
         image.y += Math.sin(step + i);
     }
     
-    // Update the light positions
-    for (i = 1; i < lightCount; ++i)
+    // Update the light positions and float arrays
+    for (i = 0; i < lightCount; ++i)
     {
         light = lights[i];
         
         light.position.x += Math.cos(step + i);
         light.position.y += Math.sin(step + i);
+
+        lightPositions[i * 3]     = light.position.x;
+        lightPositions[i * 3 + 1] = light.position.y;
+        lightPositions[i * 3 + 2] = light.position.z;
+
+        lightColors[i * 4]     = light.color.r;
+        lightColors[i * 4 + 1] = light.color.g;
+        lightColors[i * 4 + 2] = light.color.b;
+        lightColors[i * 4 + 3] = light.color.a;
     }
     
     step += 0.01;
@@ -168,11 +183,15 @@ function update ()
     // use of multiple render targets (MRT) to allow a single shader to render
     // the scene to multiple textures in a single pass.
 
-    // WebGL 1 can achieve this with the WEBGL_draw_buffers extension.
-    // WebGL 2 will support it natively.
+    // WebGL 1 can achieve MRT with the WEBGL_draw_buffers extension.
+    // WebGL 2 will support MRT natively.
 
+    // Finally, let's update the uniforms that contain the data for our lights
     light = lights[0];
     lightingPass.setFloat3('u_light_position', light.position.x / width, -light.position.y / height + 1, light.position.z);
+    lightingPass.setFloat4('u_light_color', light.color.r, light.color.g, light.color.b, light.color.a);
+
+    
 
     // After this, Phaser will take care of rendering the lightingPass for us
     // because it's an effect layer. It will take all the textures we've
@@ -205,7 +224,7 @@ var normalShader = [
     'uniform sampler2D sampler;',
     'void main(void) {',
     '   vec4 color = texture2D(sampler, v_tex_coord);',
-    '   gl_FragColor = vec4(v_tex_coord.xy, 1.0, 1.0) * color.a;',
+    '   gl_FragColor = vec4(v_tex_coord.x, 1.0 - v_tex_coord.y, 1.0, 1.0) * color.a;',
     '}'
 ].join('\n');
 
@@ -233,6 +252,7 @@ var normalShader = [
 
 var lightingShader = [
     'precision mediump float;',
+    'const int maxLights = 20;',
     'varying vec2 v_tex_coord;',
     'varying vec3 v_color;',
     'varying float v_alpha;',
@@ -247,7 +267,6 @@ var lightingShader = [
     '   vec4 color = texture2D(u_albedo, v_tex_coord);',
     '   vec4 normal_map = texture2D(u_normals, v_tex_coord);',
     '   vec3 light_dir = vec3(u_light_position.xy - uv, u_light_position.z);',
-    '   light_dir.y *= -1.0;',
     '   float D = length(light_dir);',
     '   vec3 N = normalize(vec3(normal_map.rgb * 2.0 - 1.0));',
     '   vec3 L = normalize(light_dir);',
