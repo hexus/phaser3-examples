@@ -75,7 +75,7 @@ function create ()
                 r: Math.random(),
                 g: Math.random(),
                 b: Math.random(),
-                a: 1.0
+                a: 0.75
             }
         };
         
@@ -88,8 +88,6 @@ function create ()
     lightingPass = this.add.effectLayer(0, 0, width, height, 'lighting', lightingShader);
 
     // Prepare the consistent uniforms for the lighting pass
-    light = lights[0];
-
     lightingPass.setFloat2('u_resolution', width, height);
     lightingPass.setFloat4('u_ambient_color', 0.2, 0.2, 0.2, 1.0);
     lightingPass.setFloat4('u_light_falloff', 0.2, 3.0, 1.0, 1.0);
@@ -97,12 +95,14 @@ function create ()
     lightingPass.setRenderTextureAt(normalPass.renderTexture, 'u_normals', 3);
 
     // Use pointer input to control the first light
+    light = lights[0];
+
     game.canvas.onmousemove = function (e) {
-        console.log(e);
         light.position.x = e.clientX - game.canvas.offsetLeft;
         light.position.y = e.clientY - game.canvas.offsetTop;
     };
 
+    // Use pointer click to recolour all lights
     game.canvas.onmousedown = function (e) {
         for (i = 0; i < lights.length; i++) {
             light = lights[i];
