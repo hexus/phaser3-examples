@@ -7,7 +7,7 @@ var config = {
     height: 960,
     backgroundColor: '#2d2d2d',
     parent: 'phaser-example',
-    state: {
+    scene: {
         preload: preload,
         create: create,
         update: update
@@ -81,6 +81,9 @@ function create ()
         
         lights.push(light);
     }
+
+    console.log(albedoShader);
+    console.log(this.make.renderPass);
 
     // Prepare some render passes
     albedoPass = this.make.renderPass(0, 0, width, height, 'albedo', albedoShader);
