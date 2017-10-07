@@ -3,7 +3,7 @@ var config = {
     parent: 'phaser-example',
     width: 800,
     height: 600,
-    state: {
+    scene: {
         preload: preload,
         create: create
     }
@@ -21,18 +21,18 @@ function create ()
     var config = {
         key: 'flash',
         frames: this.anims.generateFrameNumbers('diamonds', { start: 0, end: 4 }),
-        framerate: 6,
+        frameRate: 6,
         yoyo: true,
         repeat: -1
     };
 
     this.anims.create(config);
 
-    layer = this.add.layer();
+    group = this.add.group();
 
-    layer.createMultiple({ key: 'diamonds', frame: 0, repeat: 279 });
+    group.createMultiple({ key: 'diamonds', frame: 0, repeat: 279 });
 
-    layer.gridAlign({ width: 20, height: 20, cellWidth: 38, x: 22, y: 32 });
+    group.gridAlign({ width: 20, height: 20, cellWidth: 38, x: 22, y: 32 });
 
-    this.anims.staggerPlay('flash', layer.getChildren(), 0.025);
+    this.anims.staggerPlay('flash', group.getChildren(), 0.025);
 }

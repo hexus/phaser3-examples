@@ -1,14 +1,20 @@
 var config = {
     type: Phaser.WEBGL,
     parent: 'phaser-example',
-    state: {
+    scene: {
         preload: preload,
-        create: create
+        create: create,
+        update: update
     }
 };
 
-var game = new Phaser.Game(config);
+var rainbowColor = [0xFF5757, 0xE8A241, 0x97FF7F, 0x52BFFF, 0x995DE8];
+var rainbowColorIdx = 0;
+var rainbowColorOffset = 0;
+var delay = 0;
+var rainbowWave = 0;
 
+var game = new Phaser.Game(config);
 
 function preload() 
 {
@@ -17,12 +23,35 @@ function preload()
 
 function create() 
 {
-    var text = this.add.dynamicBitmapText(60, 200, 'desyrel', 'It\'s cold outside,\nthere\'s no kind of atmosphere', 64);
+    var text = this.add.dynamicBitmapText(32, 100, 'desyrel', 'It\'s cold outside,\nthere\'s no kind of atmosphere', 64);
+    var rainbow = this.add.dynamicBitmapText(32, 400, 'desyrel', 'HELLO WORLD', 96);
 
     text.setDisplayCallback(textCallback);
+    rainbow.setDisplayCallback(rainbowCallback);
 }
 
-//  data = { index: index, charCode: charCode, x: x, y: y, scaleX: scaleX, scaleY: scaleY }
+function update()
+{
+    rainbowColorIdx = 0;
+
+    if (delay++ === 6)
+    {
+        rainbowColorOffset = (rainbowColorOffset + 1) % (rainbowColor.length);
+        delay = 0;
+    }
+}
+
+function rainbowCallback(data)
+{
+    data.color = rainbowColor[(rainbowColorOffset + rainbowColorIdx) % rainbowColor.length];
+    rainbowColorIdx = (rainbowColorIdx + 1) % (rainbowColor.length);
+    data.y = Math.cos(rainbowWave + rainbowColorIdx) * 10;
+    rainbowWave += 0.01;
+
+    return data;
+}
+
+//  data = { color: color, index: index, charCode: charCode, x: x, y: y, scaleX: scaleX, scaleY: scaleY }
 function textCallback (data)
 {
     if (data.index >= 5 && data.index <= 8)

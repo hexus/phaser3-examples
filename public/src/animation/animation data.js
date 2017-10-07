@@ -4,7 +4,7 @@ var config = {
     width: 800,
     height: 600,
     backgroundColor: '#7d7d7d',
-    state: {
+    scene: {
         preload: preload,
         create: create,
         update: update
@@ -35,7 +35,7 @@ function create ()
     var config = {
         key: 'walk',
         frames: this.anims.generateFrameNumbers('mummy'),
-        framerate: 6,
+        frameRate: 6,
         yoyo: true,
         repeat: -1
     };
@@ -54,13 +54,13 @@ function create ()
 
     progress = this.add.text(100, 500, 'Progress: 0%', { fill: '#00ff00' });
 
-    this.input.keyboard.events.on('KEY_DOWN_SPACE', function (event) {
+    this.input.events.on('KEY_DOWN_SPACE', function (event) {
 
         sprite.anims.play('walk');
 
     });
 
-    this.input.keyboard.events.on('KEY_DOWN_P', function (event) {
+    this.input.events.on('KEY_DOWN_P', function (event) {
 
         if (sprite.anims.paused())
         {
@@ -73,7 +73,7 @@ function create ()
 
     });
 
-    this.input.keyboard.events.on('KEY_DOWN_R', function (event) {
+    this.input.events.on('KEY_DOWN_R', function (event) {
 
         sprite.anims.restart();
 

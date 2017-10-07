@@ -4,7 +4,7 @@ var config = {
     width: 1024,
     height: 600,
     backgroundColor: '#efefef',
-    state: {
+    scene: {
         preload: preload,
         create: create
     }
@@ -22,7 +22,7 @@ function create ()
     var config = {
         key: 'run',
         frames: 'muybridge',
-        framerate: 15,
+        frameRate: 15,
         repeat: -1
     };
 
@@ -30,11 +30,11 @@ function create ()
 
     //  Each frame is 119px wide
 
-    layer = this.add.layer();
+    group = this.add.group();
 
-    layer.createMultiple({ key: 'muybridge', frame: 0, repeat: 8 });
+    group.createMultiple({ key: 'muybridge', frame: 0, repeat: 8 });
 
-    layer.gridAlign({ width: 9, height: 1, cellWidth: 119, y: 170 });
+    group.gridAlign({ width: 9, height: 1, cellWidth: 119, y: 170 });
 
-    this.anims.staggerPlay('run', layer.getChildren(), -0.1);
+    this.anims.staggerPlay('run', group.getChildren(), -0.1);
 }

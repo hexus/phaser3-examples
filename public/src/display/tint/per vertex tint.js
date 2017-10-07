@@ -1,7 +1,9 @@
 var config = {
     type: Phaser.WEBGL,
     parent: 'phaser-example',
-    state: {
+    width: 800,
+    height: 600,
+    scene: {
         preload: preload,
         create: create
     }
@@ -9,24 +11,28 @@ var config = {
 
 var game = new Phaser.Game(config);
 
-function preload() {
-
+function preload ()
+{
     this.load.image('face', 'assets/pics/bw-face.png');
-
 }
 
-function create() {
+function create ()
+{
+    var hsv = Phaser.Graphics.Color.HSVColorWheel();
 
-    var image = this.add.image(0, 0, 'face');
+    var image = this.add.image(400, 300, 'face');
 
-    //  Set the tint like this (topLeft, topRight, bottomLeft, bottomRight)
-    image.color.setTint(0xff00ff, 0xffff00, 0x0000ff, 0xff0000);
+    image.setTint(0xff00ff, 0xffff00, 0x0000ff, 0xff0000);
 
-    //  Or like this:
+    this.input.events.on('MOUSE_DOWN_EVENT', function (event) {
 
-    // image.color.tintTopLeft = 0xff00ff;
-    // image.color.tintTopRight = 0xffff00;
-    // image.color.tintBottomLeft = 0x0000ff;
-    // image.color.tintBottomRight = 0xff0000;
+        var a = Phaser.Math.Between(0, 359);
+        var b = Phaser.Math.Between(0, 359);
+        var c = Phaser.Math.Between(0, 359);
+        var d = Phaser.Math.Between(0, 359);
+
+        image.setTint(hsv[a].color, hsv[b].color, hsv[c].color, hsv[d].color);
+
+    });
 
 }

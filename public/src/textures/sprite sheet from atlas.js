@@ -1,7 +1,7 @@
 var config = {
     type: Phaser.CANVAS,
     parent: 'phaser-example',
-    state: {
+    scene: {
         preload: preload,
         create: create
     }
@@ -32,7 +32,7 @@ function create ()
 
     // var config = {
     //     frames: this.anims.generateFrameNumbers('boom', { start: 0, end: 23, first: 23 }),
-    //     framerate: 20
+    //     frameRate: 20
     // };
 
     // this.anims.create('explode', config);
