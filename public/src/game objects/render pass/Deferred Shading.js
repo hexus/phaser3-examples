@@ -1,10 +1,10 @@
 // Deferred Disco.js
 var config = {
     type: Phaser.WEBGL,
-    width: 800,
-    height: 600,
-    // width: 1920,
-    // height: 960,
+    //width: 800,
+    //height: 600,
+    width: 1920,
+    height: 960,
     backgroundColor: '#2d2d2d',
     parent: 'phaser-example',
     state: {
@@ -50,7 +50,7 @@ function create ()
     var imageKeys = ['diamond', 'phaser-dude', 'phaser'];
     var imageKeyCount = imageKeys.length;
     
-    for (i = 0; i < 100; i++)
+    for (i = 0; i < 500; i++)
     {
         image = this.make.image({
             x: Math.random() * width,
@@ -63,7 +63,7 @@ function create ()
     }
     
     // Prepare some lights
-    for (i = 0; i < 10; i++)
+    for (i = 0; i < 20; i++)
     {
         light = {
             position: {
@@ -75,7 +75,7 @@ function create ()
                 r: Math.random(),
                 g: Math.random(),
                 b: Math.random(),
-                a: 0.75
+                a: 0.5
             }
         };
         
@@ -221,7 +221,7 @@ var normalShader = [
 // cover each light's area of influence.
 var lightingShader = [
     'precision mediump float;',
-    'const int maxLights = 20;',
+    'const int maxLights = 100;',
     'varying vec2 v_tex_coord;',
     'varying vec3 v_color;',
     'varying float v_alpha;',
